@@ -10,6 +10,7 @@ import secrets
 from pathlib import Path
 
 import dj_database_url
+from django.core.exceptions import ImproperlyConfigured
 from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -85,20 +86,34 @@ WSGI_APPLICATION = "config.wsgi.application"
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
-# Si DATABASE_URL est défini (PostgreSQL Supabase / Render), il est utilisé.
-# Sinon, SQLite locale pour le développement : aucune base n'est modifiée
-# et les identifiants Supabase ne sont pas nécessaires pour travailler en local.
+#
+# Règle : SQLite n'est utilisé QUE si DEV_USE_SQLITE=true est défini
+# explicitement (développement / tests hors ligne). Sans DATABASE_URL ni
+# DEV_USE_SQLITE, Django refuse de démarrer plutôt que de basculer silencieusement.
 DATABASE_URL = os.environ.get("DATABASE_URL", "").strip()
+USE_SQLITE_DEV = env_bool("DEV_USE_SQLITE", "false")
 
-_default_database_url = DATABASE_URL or f"sqlite:///{BASE_DIR / 'db.sqlite3'}"
-
-DATABASES = {
-    "default": dj_database_url.parse(
-        _default_database_url,
-        conn_max_age=int(os.environ.get("DB_CONN_MAX_AGE", "600")),
-        conn_health_checks=True,
-    )
-}
+if USE_SQLITE_DEV:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
+    }
+else:
+    if not DATABASE_URL:
+        raise ImproperlyConfigured(
+            "DATABASE_URL n'est pas défini. Renseignez backend/.env "
+            "(voir .env.example) ou activez DEV_USE_SQLITE=true pour un "
+            "développement local hors PostgreSQL."
+        )
+    DATABASES = {
+        "default": dj_database_url.parse(
+            DATABASE_URL,
+            conn_max_age=int(os.environ.get("DB_CONN_MAX_AGE", "600")),
+            conn_health_checks=True,
+        )
+    }
 
 # Options spécifiques à PostgreSQL (SSL + pooler Supabase).
 _is_postgres = DATABASES["default"]["ENGINE"] == "django.db.backends.postgresql"
@@ -141,6 +156,9 @@ STORAGES = {
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# Utilisateur personnalisé (rôle administrateur / vendeur).
+AUTH_USER_MODEL = "core.User"
+
 # Django REST Framework
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
@@ -151,6 +169,7 @@ REST_FRAMEWORK = {
     ],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 20,
+    "EXCEPTION_HANDLER": "core.exceptions.api_exception_handler",
 }
 
 # CORS — origines autorisées pour le frontend Vite en développement.
@@ -159,3 +178,12 @@ CORS_ALLOWED_ORIGINS = env_list(
     "http://localhost:5173,http://127.0.0.1:5173",
 )
 CORS_ALLOW_CREDENTIALS = True
+
+# CSRF — origines autorisées à envoyer des requêtes POST authentifiées par
+# session (nécessaire quand le frontend est servi depuis une autre origine).
+# En développement, les origines du serveur Vite sont fiables par défaut ;
+# en production, renseignez explicitement CSRF_TRUSTED_ORIGINS.
+_disable_csrf_origin_default = (
+    "http://localhost:5173,http://127.0.0.1:5173" if DEBUG else ""
+)
+CSRF_TRUSTED_ORIGINS = env_list("CSRF_TRUSTED_ORIGINS", _disable_csrf_origin_default)
