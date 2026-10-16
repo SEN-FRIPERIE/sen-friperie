@@ -1,0 +1,76 @@
+:root {
+  --text: #57534e;
+  --text-h: #1c1917;
+  --text-muted: #a8a29e;
+  --bg: #faf9f7;
+  --card-bg: #ffffff;
+  --border: #e7e5e4;
+
+  --accent: #b45309;
+  --accent-bg: rgba(180, 83, 9, 0.1);
+  --accent-border: rgba(180, 83, 9, 0.4);
+
+  --success: #15803d;
+  --success-bg: rgba(21, 128, 61, 0.12);
+  --warning: #b45309;
+  --warning-bg: rgba(180, 83, 9, 0.12);
+  --danger: #b91c1c;
+  --danger-bg: rgba(185, 28, 28, 0.1);
+
+  --shadow: rgba(0, 0, 0, 0.06) 0 8px 24px -12px;
+  --mono: ui-monospace, 'Cascadia Code', Consolas, monospace;
+
+  font: 16px/1.5 system-ui, 'Segoe UI', Roboto, sans-serif;
+  color-scheme: light dark;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --text: #d6d3d1;
+    --text-h: #fafaf9;
+    --text-muted: #78716c;
+    --bg: #1c1917;
+    --card-bg: #24201e;
+    --border: #3a3431;
+    --accent: #f59e0b;
+    --accent-bg: rgba(245, 158, 11, 0.14);
+    --accent-border: rgba(245, 158, 11, 0.4);
+    --success: #4ade80;
+    --success-bg: rgba(74, 222, 128, 0.14);
+    --warning: #fbbf24;
+    --warning-bg: rgba(251, 191, 36, 0.14);
+    --danger: #f87171;
+    --danger-bg: rgba(248, 113, 113, 0.14);
+    --shadow: rgba(0, 0, 0, 0.4) 0 8px 24px -12px;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100svh;
+  background: var(--bg);
+}
+
+#root {
+  min-height: 100svh;
+}
+
+h1,
+h2 {
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+button,
+input,
+select {
+  font-family: inherit;
+}
